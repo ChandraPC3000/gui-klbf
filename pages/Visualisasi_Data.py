@@ -1,130 +1,125 @@
-# Modifying the original code to include both training data and test data visualization
+# Generate a new version of Visualisasi_Data.py to support 14 types of visualizations
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from predict import load_model, predict
-from datetime import datetime, timedelta
+from predict import (
+    load_model, predict_dataframe, get_data_train, get_data_test, forecast_future
+)
 
-# Load daftar model
-MODELS = ["Model XGBoost Default", "Model XGBoost GridSearchCV", "Model XGBoost PSO"]
+# --- Konfigurasi Halaman ---
+st.set_page_config(layout="wide")
+st.title("Visualisasi Prediksi Saham KLBF.JK")
+st.write("Pilih jenis visualisasi yang ingin ditampilkan.")
 
-# Halaman Visualisasi Grafik Prediksi
-st.title("Visualisasi Grafik Prediksi Saham Kalbe Farma (KLBF)")
-st.write("Halaman ini menampilkan visualisasi grafik prediksi harga saham berdasarkan model yang dipilih.")
+# --- Opsi Visualisasi ---
+visualization_options = [
+    "1. XGBoost-Default - Train",
+    "2. XGBoost-Default - Test",
+    "3. XGBoost-Default - All",
+    "4. XGBoost-PSO - Train",
+    "5. XGBoost-PSO - Test",
+    "6. XGBoost-PSO - All",
+    "7. XGBoost-GridSearchCV - Train",
+    "8. XGBoost-GridSearchCV - Test",
+    "9. XGBoost-GridSearchCV - All",
+    "10. Semua Model - Train",
+    "11. Semua Model - Test",
+    "12. Semua Model - All",
+    "13. Forecasting Harga Penutupan (mulai 30 Des 2024)",
+    "14. Perbandingan Harga Aktual vs Prediksi ke Depan"
+]
 
-# Dropdown untuk memilih model
-selected_model_name = st.selectbox("Pilih Model Prediksi", MODELS)
+selected_option = st.sidebar.selectbox("Pilih Jenis Visualisasi", visualization_options)
 
-# Load model berdasarkan pilihan
-model = load_model(selected_model_name)
+# --- Fungsi Visualisasi ---
+def plot_comparison(df, title):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(df["Date"], df["Actual"], label="Harga Aktual", marker='o', color="blue")
+    ax.plot(df["Date"], df["Predicted"], label="Harga Prediksi", marker='x', color="orange")
+    ax.set_title(title)
+    ax.set_xlabel("Tanggal")
+    ax.set_ylabel("Harga Penutupan")
+    ax.legend()
+    st.pyplot(fig)
+    st.dataframe(df)
 
-# Bagian input
-st.sidebar.header("Input Data Prediksi")
-input_method = st.sidebar.radio("Pilih Metode Input", ["Manual", "Upload CSV"])
+def plot_multiple_models(df_dict, title):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    for label, df in df_dict.items():
+        ax.plot(df["Date"], df["Predicted"], label=f"{label}", marker='x')
+    ax.plot(list(df_dict.values())[0]["Date"], list(df_dict.values())[0]["Actual"], label="Harga Aktual", color='black')
+    ax.set_title(title)
+    ax.set_xlabel("Tanggal")
+    ax.set_ylabel("Harga Penutupan")
+    ax.legend()
+    st.pyplot(fig)
 
-if input_method == "Manual":
-    # Input manual
-    open_prices = st.sidebar.text_area("Harga Open (Pisahkan dengan koma)", "1530, 1540, 1550")
-    high_prices = st.sidebar.text_area("Harga High (Pisahkan dengan koma)", "1550, 1560, 1570")
-    low_prices = st.sidebar.text_area("Harga Low (Pisahkan dengan koma)", "1500, 1510, 1520")
-    close_prices = st.sidebar.text_area("Harga Close (Pisahkan dengan koma)", "1510, 1520, 1530")
+# --- Visualisasi Berdasarkan Pilihan ---
+def run_visualization(selected_option):
+    # Mapping model label
+    model_map = {
+        "Default": "Model XGBoost Default",
+        "PSO": "Model XGBoost PSO",
+        "Grid": "Model XGBoost GridSearchCV"
+    }
 
-    try:
-        # Konversi input ke array numpy
-        open_prices = np.array([float(x.strip()) for x in open_prices.split(",")])
-        high_prices = np.array([float(x.strip()) for x in high_prices.split(",")])
-        low_prices = np.array([float(x.strip()) for x in low_prices.split(",")])
-        close_prices = np.array([float(x.strip()) for x in close_prices.split(",")])
-        last_date = datetime.today()
-    except ValueError:
-        st.error("Pastikan semua nilai input valid dan dipisahkan dengan koma.")
-        open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
-
-elif input_method == "Upload CSV":
-    # Input melalui file CSV
-    uploaded_file = st.sidebar.file_uploader("Upload File CSV", type=["csv"])
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-
-            # Cek apakah kolom yang dibutuhkan ada di dalam dataset
-            required_columns = ["Date", "Open", "High", "Low", "Close"]
-            missing_cols = [col for col in required_columns if col not in df.columns]
-            if missing_cols:
-                st.error(f"File CSV harus memiliki kolom: {', '.join(missing_cols)}")
-                open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
-            else:
-                # Hapus baris yang memiliki nilai non-numerik pada kolom harga
-                numeric_columns = ["Open", "High", "Low", "Close"]
-                for col in numeric_columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce')
-                
-                # Hapus baris dengan nilai NaN
-                df = df.dropna(subset=numeric_columns)
-                
-                if len(df) == 0:
-                    st.error("Tidak ada data valid setelah membersihkan nilai non-numerik")
-                    open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
-                else:
-                    st.write("Data dari File CSV:")
-                    st.write(df.head())
-
-                    open_prices = df["Open"].values
-                    high_prices = df["High"].values
-                    low_prices = df["Low"].values
-                    close_prices = df["Close"].values
-
-                    # Konversi tanggal dengan aman
-                    try:
-                        last_date = pd.to_datetime(df["Date"].iloc[-1])
-                    except Exception:
-                        st.warning("Format tanggal pada file CSV tidak dikenali. Menggunakan tanggal hari ini.")
-                        last_date = datetime.today()
-
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat membaca file CSV: {e}")
-            open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+    if "Train" in selected_option:
+        df = get_data_train()
+    elif "Test" in selected_option:
+        df = get_data_test()
+    elif "All" in selected_option:
+        df_train = get_data_train()
+        df_test = get_data_test()
+        df = pd.concat([df_train, df_test])
     else:
-        open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+        df = None
 
-# Prediksi harga penutupan
-if st.sidebar.button("Generate Predictions"):
-    if len(open_prices) == len(high_prices) == len(low_prices) == len(close_prices) and len(open_prices) > 0:
-        predictions = []
-        try:
-            for open_price, high_price, low_price, close_price in zip(open_prices, high_prices, low_prices, close_prices):
-                prediction = predict(model, open_price, high_price, low_price, close_price)
-                predictions.append(prediction)
-
-            # Membuat DataFrame untuk visualisasi
-            data = pd.DataFrame({
-                "Date": [last_date - timedelta(days=i) for i in range(len(close_prices))][::-1],
-                "Harga Aktual": close_prices,
-                "Harga Prediksi": predictions
+    # Visualisasi tunggal per model
+    for key in model_map:
+        if key in selected_option:
+            model = load_model(model_map[key])
+            df["Predicted"] = predict_dataframe(model, df)
+            df_ = pd.DataFrame({
+                "Date": df["Date"],
+                "Actual": df["Next_Day_Close"],
+                "Predicted": df["Predicted"]
             })
+            plot_comparison(df_, f"{model_map[key]} - {selected_option.split('-')[-1].strip()}")
+            return
 
-            # Visualisasi menggunakan matplotlib
-            fig, ax = plt.subplots(figsize=(12, 6))
+    # Visualisasi semua model
+    if "Semua Model" in selected_option:
+        df_dict = {}
+        for label, name in model_map.items():
+            model = load_model(name)
+            df["Predicted"] = predict_dataframe(model, df)
+            df_dict[label] = pd.DataFrame({
+                "Date": df["Date"],
+                "Actual": df["Next_Day_Close"],
+                "Predicted": df["Predicted"]
+            })
+        plot_multiple_models(df_dict, f"Perbandingan {selected_option}")
 
-            # Plot Test Data (Actual values)
-            ax.plot(data["Date"], data["Harga Aktual"], label="Harga Aktual (Test Data)", marker='o', color="blue")
-            
-            # Plot Predicted Data
-            ax.plot(data["Date"], data["Harga Prediksi"], label="Harga Prediksi", marker='x', color="orange")
+    # Forecasting Masa Depan
+    if "Forecasting" in selected_option or "ke Depan" in selected_option:
+        model_name = st.selectbox("Pilih Model untuk Forecasting", list(model_map.values()))
+        model = load_model(model_name)
+        days = st.slider("Jumlah Hari Prediksi ke Depan", min_value=7, max_value=180, value=30, step=1)
 
-            ax.set_xlabel("Tanggal")
-            ax.set_ylabel("Harga")
-            ax.set_title(f"Visualisasi Prediksi - {selected_model_name}")
-            ax.legend()
+        all_data = get_data_train()
+        last_known = all_data.iloc[-1][["Open", "High", "Low", "Close"]].to_dict()
 
-            # Tampilkan grafik
-            st.pyplot(fig)
+        forecast_df = forecast_future(model, last_known, days)
+        forecast_df["Predicted"] = forecast_df["Close"]
 
-            # Tampilkan data
-            st.write("Data Prediksi dan Test Data:")
-            st.dataframe(data)
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
-    else:
-        st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
+        if "ke Depan" in selected_option:
+            # Bandingkan prediksi vs harga aktual jika tersedia
+            df_test = get_data_test()
+            merged = pd.merge(forecast_df, df_test[["Date", "Next_Day_Close"]], on="Date", how="left")
+            merged = merged.rename(columns={"Next_Day_Close": "Actual"})
+            plot_comparison(merged, f"Perbandingan Prediksi vs Aktual ke Depan ({model_name})")
+        else:
+            forecast_df["Actual"] = None
+            plot_comparison(forecast_df, f"Forecasting {model_name} ({days} hari ke depan)")
+
+run_visualization(selected_option)
