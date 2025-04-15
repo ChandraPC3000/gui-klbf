@@ -63,11 +63,11 @@ if input_method == "Manual" or (input_method == "Upload CSV" and not uploaded_fi
     st.line_chart(data[['Open', 'Close']])
     st.line_chart(predictions)
 
-# End of the script
-"""
+# Correcting the file writing process by using an alternative method
+file_path = os.path.join(pages_path, 'Visualisasi_Data.py')
 
-# Save the modified code to the same file
-with open(visualisasi_file_path, 'w') as file:
+# Writing the modified code to the file again
+with open(file_path, 'w') as file:
     file.write(modified_code)
 
-"Changes to Visualisasi_Data.py have been applied!"
+"Changes to Visualisasi_Data.py have been successfully applied!"
