@@ -1,4 +1,4 @@
-# Generate a new version of Visualisasi_Data.py to support 14 types of visualizations
+# Redefine updated Visualisasi_Data.py with CSV upload feature added
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,6 +31,25 @@ visualization_options = [
 
 selected_option = st.sidebar.selectbox("Pilih Jenis Visualisasi", visualization_options)
 
+use_custom_csv = st.sidebar.checkbox("Gunakan File CSV Upload")
+uploaded_csv = None
+df_uploaded = None
+if use_custom_csv:
+    uploaded_csv = st.sidebar.file_uploader("Upload CSV dengan kolom: Date, Open, High, Low, Close, Next_Day_Close", type="csv")
+    if uploaded_csv is not None:
+        try:
+            df_uploaded = pd.read_csv(uploaded_csv)
+            required_cols = {"Date", "Open", "High", "Low", "Close", "Next_Day_Close"}
+            if required_cols.issubset(df_uploaded.columns):
+                df_uploaded["Date"] = pd.to_datetime(df_uploaded["Date"])
+                st.success("✅ File CSV berhasil dimuat.")
+            else:
+                st.warning("❌ File tidak memiliki semua kolom yang dibutuhkan.")
+                df_uploaded = None
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat membaca file: {e}")
+            df_uploaded = None
+
 # --- Fungsi Visualisasi ---
 def plot_comparison(df, title):
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -56,25 +75,25 @@ def plot_multiple_models(df_dict, title):
 
 # --- Visualisasi Berdasarkan Pilihan ---
 def run_visualization(selected_option):
-    # Mapping model label
     model_map = {
         "Default": "Model XGBoost Default",
         "PSO": "Model XGBoost PSO",
         "Grid": "Model XGBoost GridSearchCV"
     }
 
-    if "Train" in selected_option:
+    # Load data sesuai opsi
+    if df_uploaded is not None:
+        df = df_uploaded.copy()
+    elif "Train" in selected_option:
         df = get_data_train()
     elif "Test" in selected_option:
         df = get_data_test()
     elif "All" in selected_option:
-        df_train = get_data_train()
-        df_test = get_data_test()
-        df = pd.concat([df_train, df_test])
+        df = pd.concat([get_data_train(), get_data_test()])
     else:
         df = None
 
-    # Visualisasi tunggal per model
+    # Visualisasi per model
     for key in model_map:
         if key in selected_option:
             model = load_model(model_map[key])
@@ -113,7 +132,6 @@ def run_visualization(selected_option):
         forecast_df["Predicted"] = forecast_df["Close"]
 
         if "ke Depan" in selected_option:
-            # Bandingkan prediksi vs harga aktual jika tersedia
             df_test = get_data_test()
             merged = pd.merge(forecast_df, df_test[["Date", "Next_Day_Close"]], on="Date", how="left")
             merged = merged.rename(columns={"Next_Day_Close": "Actual"})
