@@ -1,4 +1,4 @@
-# Redefine updated Visualisasi_Data.py with CSV upload feature added
+# Update Visualisasi_Data.py to support CSV with columns in the order: Date, Close, High, Low, Open, Volume
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,16 +35,23 @@ use_custom_csv = st.sidebar.checkbox("Gunakan File CSV Upload")
 uploaded_csv = None
 df_uploaded = None
 if use_custom_csv:
-    uploaded_csv = st.sidebar.file_uploader("Upload CSV dengan kolom: Date, Open, High, Low, Close, Next_Day_Close", type="csv")
+    uploaded_csv = st.sidebar.file_uploader("Upload CSV: Date, Close, High, Low, Open, Volume", type="csv")
     if uploaded_csv is not None:
         try:
-            df_uploaded = pd.read_csv(uploaded_csv)
-            required_cols = {"Date", "Open", "High", "Low", "Close", "Next_Day_Close"}
-            if required_cols.issubset(df_uploaded.columns):
-                df_uploaded["Date"] = pd.to_datetime(df_uploaded["Date"])
-                st.success("✅ File CSV berhasil dimuat.")
+            df_uploaded_raw = pd.read_csv(uploaded_csv)
+            required_cols = {"Date", "Open", "High", "Low", "Close"}
+            if required_cols.issubset(df_uploaded_raw.columns):
+                df_uploaded = pd.DataFrame({
+                    "Date": pd.to_datetime(df_uploaded_raw["Date"]),
+                    "Open": df_uploaded_raw["Open"],
+                    "High": df_uploaded_raw["High"],
+                    "Low": df_uploaded_raw["Low"],
+                    "Close": df_uploaded_raw["Close"],
+                    "Next_Day_Close": df_uploaded_raw["Close"]  # Asumsi: target = Close
+                })
+                st.success("✅ File CSV berhasil dimuat dan disesuaikan.")
             else:
-                st.warning("❌ File tidak memiliki semua kolom yang dibutuhkan.")
+                st.warning("❌ File tidak memiliki semua kolom yang dibutuhkan: Date, Close, High, Low, Open")
                 df_uploaded = None
         except Exception as e:
             st.error(f"Terjadi kesalahan saat membaca file: {e}")
