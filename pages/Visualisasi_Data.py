@@ -1,5 +1,7 @@
-# Correcting the triple-quoted string for proper closure
-modified_code = '''import streamlit as st
+# Modifying the original code to include both training data and test data visualization
+
+updated_code = """
+import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,47 +28,115 @@ input_method = st.sidebar.radio("Pilih Metode Input", ["Manual", "Upload CSV"])
 if input_method == "Manual":
     # Input manual
     open_prices = st.sidebar.text_area("Harga Open (Pisahkan dengan koma)", "1530, 1540, 1550")
-    high_prices = st.sidebar.text_area("Harga High (Pisahkan dengan koma)", "1545, 1555, 1565")
-    low_prices = st.sidebar.text_area("Harga Low (Pisahkan dengan koma)", "1525, 1535, 1540")
-    close_prices = st.sidebar.text_area("Harga Close (Pisahkan dengan koma)", "1535, 1545, 1555")
-    
-    # Convert the input data to pandas DataFrame
-    open_prices = np.array([float(x) for x in open_prices.split(',')])
-    high_prices = np.array([float(x) for x in high_prices.split(',')])
-    low_prices = np.array([float(x) for x in low_prices.split(',')])
-    close_prices = np.array([float(x) for x in close_prices.split(',')])
-    
-    data = pd.DataFrame({
-        'Open': open_prices,
-        'High': high_prices,
-        'Low': low_prices,
-        'Close': close_prices
-    })
+    high_prices = st.sidebar.text_area("Harga High (Pisahkan dengan koma)", "1550, 1560, 1570")
+    low_prices = st.sidebar.text_area("Harga Low (Pisahkan dengan koma)", "1500, 1510, 1520")
+    close_prices = st.sidebar.text_area("Harga Close (Pisahkan dengan koma)", "1510, 1520, 1530")
+
+    try:
+        # Konversi input ke array numpy
+        open_prices = np.array([float(x.strip()) for x in open_prices.split(",")])
+        high_prices = np.array([float(x.strip()) for x in high_prices.split(",")])
+        low_prices = np.array([float(x.strip()) for x in low_prices.split(",")])
+        close_prices = np.array([float(x.strip()) for x in close_prices.split(",")])
+        last_date = datetime.today()
+    except ValueError:
+        st.error("Pastikan semua nilai input valid dan dipisahkan dengan koma.")
+        open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
 
 elif input_method == "Upload CSV":
-    # Upload CSV
-    uploaded_file = st.sidebar.file_uploader("Pilih file CSV", type=["csv"])
+    # Input melalui file CSV
+    uploaded_file = st.sidebar.file_uploader("Upload File CSV", type=["csv"])
     if uploaded_file is not None:
-        data = pd.read_csv(uploaded_file)
-        st.write(data.head())
+        try:
+            df = pd.read_csv(uploaded_file)
 
-# Prediksi dan visualisasi
-predictions = predict(model, data)
+            # Cek apakah kolom yang dibutuhkan ada di dalam dataset
+            required_columns = ["Date", "Open", "High", "Low", "Close"]
+            missing_cols = [col for col in required_columns if col not in df.columns]
+            if missing_cols:
+                st.error(f"File CSV harus memiliki kolom: {', '.join(missing_cols)}")
+                open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+            else:
+                # Hapus baris yang memiliki nilai non-numerik pada kolom harga
+                numeric_columns = ["Open", "High", "Low", "Close"]
+                for col in numeric_columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                # Hapus baris dengan nilai NaN
+                df = df.dropna(subset=numeric_columns)
+                
+                if len(df) == 0:
+                    st.error("Tidak ada data valid setelah membersihkan nilai non-numerik")
+                    open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+                else:
+                    st.write("Data dari File CSV:")
+                    st.write(df.head())
 
-# Visualisasi Data Prediksi dan Test Data
-st.subheader("Visualisasi Data Prediksi vs Data Asli (Test Data)")
-if input_method == "Manual" or (input_method == "Upload CSV" and not uploaded_file.empty):
-    st.write("Data Prediksi dan Data Asli:")
-    
-    # Assuming the test data and predicted data columns are available
-    st.line_chart(data[['Open', 'Close']])
-    st.line_chart(predictions)
+                    open_prices = df["Open"].values
+                    high_prices = df["High"].values
+                    low_prices = df["Low"].values
+                    close_prices = df["Close"].values
 
-# Correcting file path and re-writing the changes directly
+                    # Konversi tanggal dengan aman
+                    try:
+                        last_date = pd.to_datetime(df["Date"].iloc[-1])
+                    except Exception:
+                        st.warning("Format tanggal pada file CSV tidak dikenali. Menggunakan tanggal hari ini.")
+                        last_date = datetime.today()
+
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat membaca file CSV: {e}")
+            open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+    else:
+        open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
+
+# Prediksi harga penutupan
+if st.sidebar.button("Generate Predictions"):
+    if len(open_prices) == len(high_prices) == len(low_prices) == len(close_prices) and len(open_prices) > 0:
+        predictions = []
+        try:
+            for open_price, high_price, low_price, close_price in zip(open_prices, high_prices, low_prices, close_prices):
+                prediction = predict(model, open_price, high_price, low_price, close_price)
+                predictions.append(prediction)
+
+            # Membuat DataFrame untuk visualisasi
+            data = pd.DataFrame({
+                "Date": [last_date - timedelta(days=i) for i in range(len(close_prices))][::-1],
+                "Harga Aktual": close_prices,
+                "Harga Prediksi": predictions
+            })
+
+            # Visualisasi menggunakan matplotlib
+            fig, ax = plt.subplots(figsize=(12, 6))
+
+            # Plot Test Data (Actual values)
+            ax.plot(data["Date"], data["Harga Aktual"], label="Harga Aktual (Test Data)", marker='o', color="blue")
+            
+            # Plot Predicted Data
+            ax.plot(data["Date"], data["Harga Prediksi"], label="Harga Prediksi", marker='x', color="orange")
+
+            ax.set_xlabel("Tanggal")
+            ax.set_ylabel("Harga")
+            ax.set_title(f"Visualisasi Prediksi - {selected_model_name}")
+            ax.legend()
+
+            # Tampilkan grafik
+            st.pyplot(fig)
+
+            # Tampilkan data
+            st.write("Data Prediksi dan Test Data:")
+            st.dataframe(data)
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
+    else:
+        st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
+"""
+
+# Save the updated code
 visualisasi_file_path = os.path.join(pages_path, 'Visualisasi_Data.py')
 
-# Writing the corrected code directly
+# Write the updated code to the file
 with open(visualisasi_file_path, 'w') as file:
-    file.write(modified_code)
+    file.write(updated_code)
 
-"Changes to Visualisasi_Data.py have been successfully applied!"
+"Changes to Visualisasi_Data.py have been successfully applied with test data visualization!"
