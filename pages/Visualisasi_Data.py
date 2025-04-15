@@ -1,6 +1,4 @@
 # Modifying the original code to include both training data and test data visualization
-
-updated_code = """
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -130,13 +128,3 @@ if st.sidebar.button("Generate Predictions"):
             st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
     else:
         st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
-"""
-
-# Save the updated code
-visualisasi_file_path = os.path.join(pages_path, 'Visualisasi_Data.py')
-
-# Write the updated code to the file
-with open(visualisasi_file_path, 'w') as file:
-    file.write(updated_code)
-
-"Changes to Visualisasi_Data.py have been successfully applied with test data visualization!"
