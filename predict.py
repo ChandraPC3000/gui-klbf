@@ -53,7 +53,7 @@ def load_model(model_name):
             "('Close', 'KLBF.JK')"
         ]]
         y_train = train_data['Next_Day_Close']
-        X_train_normalized = X_train.apply(lambda x: custom_min_max_scaler(x))
+        X_train_normalized = X_train.applymap(custom_min_max_scaler)
         model.fit(X_train_normalized, y_train)
         return model
     except Exception as e:
@@ -73,7 +73,7 @@ def predict(model, open_price, high_price, low_price, close_price):
 # --- Prediksi Batch (DataFrame) ---
 def predict_dataframe(model, df):
     X = df[["Open", "High", "Low", "Close"]].copy()
-    X_scaled = X.apply(lambda x: custom_min_max_scaler(x))
+    X_scaled = X.applymap(custom_min_max_scaler)  # ✅ fixed
     predictions = model.predict(X_scaled)
     return predictions
 
@@ -81,7 +81,7 @@ def predict_dataframe(model, df):
 def get_data_train():
     df = pd.read_csv(TRAIN_DATA_PATH)
     return pd.DataFrame({
-        "Date": pd.date_range(end="2024-12-01", periods=len(df)),  # Sementara
+        "Date": pd.date_range(end="2024-12-01", periods=len(df)),  # placeholder
         "Open": df["('Open', 'KLBF.JK')"],
         "High": df["('High', 'KLBF.JK')"],
         "Low": df["('Low', 'KLBF.JK')"],
@@ -93,7 +93,7 @@ def get_data_train():
 def get_data_test():
     df = pd.read_csv(TEST_DATA_PATH)
     return pd.DataFrame({
-        "Date": pd.date_range(start="2024-12-02", periods=len(df)),  # Sementara
+        "Date": pd.date_range(start="2024-12-02", periods=len(df)),  # placeholder
         "Open": df["('Open', 'KLBF.JK')"],
         "High": df["('High', 'KLBF.JK')"],
         "Low": df["('Low', 'KLBF.JK')"],
@@ -101,7 +101,7 @@ def get_data_test():
         "Next_Day_Close": df["Next_Day_Close"]
     })
 
-# --- Prediksi Beberapa Hari ke Depan (Forecasting) ---
+# --- Forecasting Ke Depan ---
 def forecast_future(model, last_row, days=30):
     forecast_results = []
     current_input = last_row.copy()
