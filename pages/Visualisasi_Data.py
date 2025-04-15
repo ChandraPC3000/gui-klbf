@@ -1,6 +1,5 @@
-# Modify the content of "Visualisasi_Data.py" to add test data visualization
-modified_code = """
-import streamlit as st
+# Correcting the triple-quoted string for proper closure
+modified_code = '''import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,10 +62,10 @@ if input_method == "Manual" or (input_method == "Upload CSV" and not uploaded_fi
     st.line_chart(data[['Open', 'Close']])
     st.line_chart(predictions)
 
-# Correcting the file writing process by using an alternative method
-file_path = os.path.join(pages_path, 'Visualisasi_Data.py')
+# End of the script
+'''
 
-# Writing the modified code to the file again
+# Save the corrected code to the file
 with open(file_path, 'w') as file:
     file.write(modified_code)
 
