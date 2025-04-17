@@ -84,12 +84,12 @@ elif input_method == "Upload CSV":
                         st.warning("Format tanggal pada file CSV tidak dikenali. Menggunakan tanggal hari ini.")
                         last_date = datetime.today()
 
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat membaca file CSV: {e}")
-            open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
-
 # Input untuk forecasting
-forecast_period = st.sidebar.number_input("Jumlah Periode Forecasting", min_value=1, max_value=30, value=5)
+forecast_period = st.sidebar.number_input("Jumlah Periode Forecasting", 
+                                          min_value=1, 
+                                          max_value=30, 
+                                          value=5, 
+                                          key="forecast_period_input")
 
 # Prediksi harga penutupan
 if st.sidebar.button("Generate Predictions"):
