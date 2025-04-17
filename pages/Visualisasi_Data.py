@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from predict import load_model, predict
 from datetime import datetime, timedelta
+from predict import load_model, predict
 
 # Load daftar model
 MODELS = ["Model XGBoost Default", "Model XGBoost GridSearchCV", "Model XGBoost PSO"]
@@ -21,6 +21,9 @@ model = load_model(selected_model_name)
 # Bagian input
 st.sidebar.header("Input Data Prediksi")
 input_method = st.sidebar.radio("Pilih Metode Input", ["Manual", "Upload CSV"])
+
+# Variabel untuk data harga saham
+open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
 
 if input_method == "Manual":
     # Input manual
@@ -84,49 +87,11 @@ elif input_method == "Upload CSV":
         except Exception as e:
             st.error(f"Terjadi kesalahan saat membaca file CSV: {e}")
             open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
-    else:
-        open_prices, high_prices, low_prices, close_prices, last_date = [], [], [], [], datetime.today()
 
-# Prediksi harga penutupan
-if st.sidebar.button("Generate Predictions"):
-    if len(open_prices) == len(high_prices) == len(low_prices) == len(close_prices) and len(open_prices) > 0:
-        predictions = []
-        try:
-            for open_price, high_price, low_price, close_price in zip(open_prices, high_prices, low_prices, close_prices):
-                prediction = predict(model, open_price, high_price, low_price, close_price)
-                predictions.append(prediction)
-
-            # Membuat DataFrame untuk visualisasi
-            data = pd.DataFrame({
-                "Date": [last_date - timedelta(days=i) for i in range(len(close_prices))][::-1],
-                "Harga Aktual": close_prices,
-                "Harga Prediksi": predictions
-            })
-
-            # Visualisasi menggunakan matplotlib
-            fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(data["Date"], data["Harga Aktual"], label="Harga Aktual", marker='o', color="blue")
-            ax.plot(data["Date"], data["Harga Prediksi"], label="Harga Prediksi", marker='x', color="orange")
-            ax.set_xlabel("Tanggal")
-            ax.set_ylabel("Harga")
-            ax.set_title(f"Visualisasi Prediksi - {selected_model_name}")
-            ax.legend()
-
-            # Tampilkan grafik
-            st.pyplot(fig)
-
-            # Tampilkan data
-            st.write("Data Prediksi:")
-            st.dataframe(data)
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
-    else:
-        st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
-
-# Tambahkan input periode untuk forecasting
+# Input untuk forecasting
 forecast_period = st.sidebar.number_input("Jumlah Periode Forecasting", min_value=1, max_value=30, value=5)
 
-# Bagian prediksi
+# Prediksi harga penutupan
 if st.sidebar.button("Generate Predictions"):
     if len(open_prices) == len(high_prices) == len(low_prices) == len(close_prices) and len(open_prices) > 0:
         predictions = []
@@ -148,7 +113,6 @@ if st.sidebar.button("Generate Predictions"):
                 close_prices = np.append(close_prices, next_prediction)
 
             # Gabungkan data historis dan hasil forecast
-            forecast_dates = [last_date + timedelta(days=i) for i in range(1, forecast_period + 1)]
             forecast_data = pd.DataFrame({
                 "Date": forecast_dates,
                 "Harga Prediksi": forecast_predictions
