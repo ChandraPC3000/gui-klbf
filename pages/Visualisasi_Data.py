@@ -1,4 +1,3 @@
-# Update Visualisasi_Data.py to support CSV with columns in the order: Date, Close, High, Low, Open, Volume
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,6 +30,7 @@ visualization_options = [
 
 selected_option = st.sidebar.selectbox("Pilih Jenis Visualisasi", visualization_options)
 
+# Custom CSV Upload
 use_custom_csv = st.sidebar.checkbox("Gunakan File CSV Upload")
 uploaded_csv = None
 df_uploaded = None
@@ -69,18 +69,6 @@ def plot_comparison(df, title):
     st.pyplot(fig)
     st.dataframe(df)
 
-def plot_multiple_models(df_dict, title):
-    fig, ax = plt.subplots(figsize=(12, 6))
-    for label, df in df_dict.items():
-        ax.plot(df["Date"], df["Predicted"], label=f"{label}", marker='x')
-    ax.plot(list(df_dict.values())[0]["Date"], list(df_dict.values())[0]["Actual"], label="Harga Aktual", color='black')
-    ax.set_title(title)
-    ax.set_xlabel("Tanggal")
-    ax.set_ylabel("Harga Penutupan")
-    ax.legend()
-    st.pyplot(fig)
-
-# --- Visualisasi Berdasarkan Pilihan ---
 def run_visualization(selected_option):
     model_map = {
         "Default": "Model XGBoost Default",
@@ -105,31 +93,43 @@ def run_visualization(selected_option):
         if key in selected_option:
             model = load_model(model_map[key])
             df["Predicted"] = predict_dataframe(model, df)
-            df_ = pd.DataFrame({
-                "Date": df["Date"],
-                "Actual": df["Next_Day_Close"],
-                "Predicted": df["Predicted"]
-            })
-            plot_comparison(df_, f"{model_map[key]} - {selected_option.split('-')[-1].strip()}")
-            return
+            
+            if "Train" in selected_option:
+                df_ = pd.DataFrame({
+                    "Date": df["Date"],
+                    "Actual": df["Next_Day_Close"],
+                    "Predicted": df["Predicted"]
+                })
+                plot_comparison(df_, f"{model_map[key]} - Train")
 
-    # Visualisasi semua model
-    if "Semua Model" in selected_option:
-        df_dict = {}
-        for label, name in model_map.items():
-            model = load_model(name)
-            df["Predicted"] = predict_dataframe(model, df)
-            df_dict[label] = pd.DataFrame({
-                "Date": df["Date"],
-                "Actual": df["Next_Day_Close"],
-                "Predicted": df["Predicted"]
-            })
-        plot_multiple_models(df_dict, f"Perbandingan {selected_option}")
+            elif "Test" in selected_option:
+                df_test = get_data_test()
+                df_test["Predicted"] = predict_dataframe(model, df_test)
+                df_test_ = pd.DataFrame({
+                    "Date": df_test["Date"],
+                    "Actual": df_test["Next_Day_Close"],
+                    "Predicted": df_test["Predicted"]
+                })
+                plot_comparison(df_test_, f"{model_map[key]} - Test")
+                
+            elif "All" in selected_option:
+                df_all = pd.concat([get_data_train(), get_data_test()])
+                df_all["Predicted"] = predict_dataframe(model, df_all)
+                df_all_ = pd.DataFrame({
+                    "Date": df_all["Date"],
+                    "Actual": df_all["Next_Day_Close"],
+                    "Predicted": df_all["Predicted"]
+                })
+                plot_comparison(df_all_, f"{model_map[key]} - All")
+            
+            return  # Hentikan setelah visualisasi model yang dipilih
 
     # Forecasting Masa Depan
     if "Forecasting" in selected_option or "ke Depan" in selected_option:
         model_name = st.selectbox("Pilih Model untuk Forecasting", list(model_map.values()))
         model = load_model(model_name)
+
+        # Slider untuk custom periode prediksi
         days = st.slider("Jumlah Hari Prediksi ke Depan", min_value=7, max_value=180, value=30, step=1)
 
         all_data = get_data_train()
