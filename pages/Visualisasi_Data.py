@@ -12,25 +12,14 @@ st.write("Pilih jenis visualisasi yang ingin ditampilkan.")
 
 # --- Opsi Visualisasi ---
 visualization_options = [
-    "1. XGBoost-Default - Train",
-    "2. XGBoost-Default - Test",
-    "3. XGBoost-Default - All",
-    "4. XGBoost-PSO - Train",
-    "5. XGBoost-PSO - Test",
-    "6. XGBoost-PSO - All",
-    "7. XGBoost-GridSearchCV - Train",
-    "8. XGBoost-GridSearchCV - Test",
-    "9. XGBoost-GridSearchCV - All",
-    "10. Semua Model - Train",
-    "11. Semua Model - Test",
-    "12. Semua Model - All",
-    "13. Forecasting Harga Penutupan (mulai 30 Des 2024)",
-    "14. Perbandingan Harga Aktual vs Prediksi ke Depan"
+    "1. XGBoost-Default - Test",
+    "2. XGBoost-PSO - Test",
+    "3. XGBoost-GridSearchCV - Test",
+    "4. Semua Model - Test"
 ]
 
 selected_option = st.sidebar.selectbox("Pilih Jenis Visualisasi", visualization_options)
 
-# Custom CSV Upload
 use_custom_csv = st.sidebar.checkbox("Gunakan File CSV Upload")
 uploaded_csv = None
 df_uploaded = None
@@ -79,12 +68,8 @@ def run_visualization(selected_option):
     # Load data sesuai opsi
     if df_uploaded is not None:
         df = df_uploaded.copy()
-    elif "Train" in selected_option:
-        df = get_data_train()
     elif "Test" in selected_option:
         df = get_data_test()
-    elif "All" in selected_option:
-        df = pd.concat([get_data_train(), get_data_test()])
     else:
         df = None
 
@@ -93,58 +78,27 @@ def run_visualization(selected_option):
         if key in selected_option:
             model = load_model(model_map[key])
             df["Predicted"] = predict_dataframe(model, df)
-            
-            if "Train" in selected_option:
-                df_ = pd.DataFrame({
-                    "Date": df["Date"],
-                    "Actual": df["Next_Day_Close"],
-                    "Predicted": df["Predicted"]
-                })
-                plot_comparison(df_, f"{model_map[key]} - Train")
 
-            elif "Test" in selected_option:
-                df_test = get_data_test()
-                df_test["Predicted"] = predict_dataframe(model, df_test)
-                df_test_ = pd.DataFrame({
-                    "Date": df_test["Date"],
-                    "Actual": df_test["Next_Day_Close"],
-                    "Predicted": df_test["Predicted"]
-                })
-                plot_comparison(df_test_, f"{model_map[key]} - Test")
-                
-            elif "All" in selected_option:
-                df_all = pd.concat([get_data_train(), get_data_test()])
-                df_all["Predicted"] = predict_dataframe(model, df_all)
-                df_all_ = pd.DataFrame({
-                    "Date": df_all["Date"],
-                    "Actual": df_all["Next_Day_Close"],
-                    "Predicted": df_all["Predicted"]
-                })
-                plot_comparison(df_all_, f"{model_map[key]} - All")
-            
+            # Visualisasi untuk Data Test
+            df_test_ = pd.DataFrame({
+                "Date": df["Date"],
+                "Actual": df["Next_Day_Close"],
+                "Predicted": df["Predicted"]
+            })
+            plot_comparison(df_test_, f"{model_map[key]} - Test")
             return  # Hentikan setelah visualisasi model yang dipilih
 
-    # Forecasting Masa Depan
-    if "Forecasting" in selected_option or "ke Depan" in selected_option:
-        model_name = st.selectbox("Pilih Model untuk Forecasting", list(model_map.values()))
-        model = load_model(model_name)
-
-        # Slider untuk custom periode prediksi
-        days = st.slider("Jumlah Hari Prediksi ke Depan", min_value=7, max_value=180, value=30, step=1)
-
-        all_data = get_data_train()
-        last_known = all_data.iloc[-1][["Open", "High", "Low", "Close"]].to_dict()
-
-        forecast_df = forecast_future(model, last_known, days)
-        forecast_df["Predicted"] = forecast_df["Close"]
-
-        if "ke Depan" in selected_option:
-            df_test = get_data_test()
-            merged = pd.merge(forecast_df, df_test[["Date", "Next_Day_Close"]], on="Date", how="left")
-            merged = merged.rename(columns={"Next_Day_Close": "Actual"})
-            plot_comparison(merged, f"Perbandingan Prediksi vs Aktual ke Depan ({model_name})")
-        else:
-            forecast_df["Actual"] = None
-            plot_comparison(forecast_df, f"Forecasting {model_name} ({days} hari ke depan)")
+    # Visualisasi Semua Model - Test
+    if "Semua Model" in selected_option:
+        df_dict = {}
+        for label, name in model_map.items():
+            model = load_model(name)
+            df["Predicted"] = predict_dataframe(model, df)
+            df_dict[label] = pd.DataFrame({
+                "Date": df["Date"],
+                "Actual": df["Next_Day_Close"],
+                "Predicted": df["Predicted"]
+            })
+        plot_comparison(df_dict, f"Perbandingan Semua Model - Test")
 
 run_visualization(selected_option)
