@@ -122,3 +122,61 @@ if st.sidebar.button("Generate Predictions"):
             st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
     else:
         st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
+
+# Tambahkan input periode untuk forecasting
+forecast_period = st.sidebar.number_input("Jumlah Periode Forecasting", min_value=1, max_value=30, value=5)
+
+# Bagian prediksi
+if st.sidebar.button("Generate Predictions"):
+    if len(open_prices) == len(high_prices) == len(low_prices) == len(close_prices) and len(open_prices) > 0:
+        predictions = []
+        try:
+            # Forecasting harga penutupan untuk beberapa periode ke depan
+            for open_price, high_price, low_price, close_price in zip(open_prices, high_prices, low_prices, close_prices):
+                prediction = predict(model, open_price, high_price, low_price, close_price)
+                predictions.append(prediction)
+
+            # Tambahkan prediksi untuk periode ke depan
+            forecast_dates = [last_date + timedelta(days=i) for i in range(1, forecast_period + 1)]
+            forecast_predictions = []
+            for i in range(forecast_period):
+                next_prediction = predict(model, open_prices[-1], high_prices[-1], low_prices[-1], close_prices[-1])
+                forecast_predictions.append(next_prediction)
+                open_prices = np.append(open_prices, next_prediction)
+                high_prices = np.append(high_prices, next_prediction)
+                low_prices = np.append(low_prices, next_prediction)
+                close_prices = np.append(close_prices, next_prediction)
+
+            # Gabungkan data historis dan hasil forecast
+            forecast_dates = [last_date + timedelta(days=i) for i in range(1, forecast_period + 1)]
+            forecast_data = pd.DataFrame({
+                "Date": forecast_dates,
+                "Harga Prediksi": forecast_predictions
+            })
+
+            # Visualisasi
+            data = pd.DataFrame({
+                "Date": [last_date - timedelta(days=i) for i in range(len(close_prices))][::-1],
+                "Harga Aktual": close_prices,
+                "Harga Prediksi": predictions
+            })
+
+            # Gabungkan data forecast dengan data aktual
+            data = pd.concat([data, forecast_data], ignore_index=True)
+
+            fig, ax = plt.subplots(figsize=(12, 6))
+            ax.plot(data["Date"], data["Harga Aktual"], label="Harga Aktual", marker='o', color="blue")
+            ax.plot(data["Date"], data["Harga Prediksi"], label="Harga Prediksi", marker='x', color="orange")
+            ax.set_xlabel("Tanggal")
+            ax.set_ylabel("Harga")
+            ax.set_title(f"Visualisasi Prediksi - {selected_model_name}")
+            ax.legend()
+
+            st.pyplot(fig)
+            st.write("Data Prediksi:")
+            st.dataframe(data)
+
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat melakukan prediksi: {str(e)}")
+    else:
+        st.error("Jumlah nilai pada input harga tidak sama atau data kosong.")
