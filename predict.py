@@ -78,6 +78,18 @@ def predict(model, open_price, high_price, low_price, close_price):
     prediction = model.predict(input_data)
     return prediction[0]
 
+# Fungsi untuk memprediksi harga untuk beberapa periode ke depan
+def predict_multiple(model, open_price, high_price, low_price, close_price, periods):
+    predictions = []
+    for _ in range(periods):
+        prediction = predict(model, open_price, high_price, low_price, close_price)
+        predictions.append(prediction)
+        
+        # Update harga untuk prediksi selanjutnya (forecasting)
+        open_price, high_price, low_price, close_price = prediction, prediction, prediction, prediction
+
+    return predictions
+
 # --- Streamlit UI ---
 st.title("Prediksi Harga Saham KLBF dengan Model XGBoost")
 
