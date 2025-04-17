@@ -47,7 +47,7 @@ def load_model(model_name):
         train_data = pd.read_csv(TRAIN_DATA_PATH)
         
         # Pisahkan fitur dan target
-        X_train = train_data[[ 
+        X_train = train_data[[
             "('Open', 'KLBF.JK')", 
             "('High', 'KLBF.JK')", 
             "('Low', 'KLBF.JK')", 
@@ -78,18 +78,6 @@ def predict(model, open_price, high_price, low_price, close_price):
     prediction = model.predict(input_data)
     return prediction[0]
 
-# Fungsi untuk memprediksi harga untuk beberapa periode ke depan
-def predict_multiple(model, open_price, high_price, low_price, close_price, periods):
-    predictions = []
-    for _ in range(periods):
-        prediction = predict(model, open_price, high_price, low_price, close_price)
-        predictions.append(prediction)
-        
-        # Update harga untuk prediksi selanjutnya (forecasting)
-        open_price, high_price, low_price, close_price = prediction, prediction, prediction, prediction
-
-    return predictions
-
 # --- Streamlit UI ---
 st.title("Prediksi Harga Saham KLBF dengan Model XGBoost")
 
@@ -108,13 +96,9 @@ high_price = st.number_input("Harga High:", min_value=0.0, format="%.2f")
 low_price = st.number_input("Harga Low:", min_value=0.0, format="%.2f")
 close_price = st.number_input("Harga Close:", min_value=0.0, format="%.2f")
 
-# Input untuk jumlah periode forecasting
-forecast_period = st.number_input("Jumlah Periode Forecasting", min_value=1, max_value=30, value=5)
-
-if st.button("Prediksi Harga Close untuk Beberapa Periode"):
+if st.button("Prediksi Harga Close"):
     if 'model' in st.session_state:
-        # Prediksi untuk beberapa periode ke depan
-        forecast = predict_multiple(st.session_state['model'], open_price, high_price, low_price, close_price, forecast_period)
-        st.write(f"Prediksi Harga Close untuk {forecast_period} Periode Mendatang: {forecast}")
+        prediksi_harga = predict(st.session_state['model'], open_price, high_price, low_price, close_price)
+        st.success(f"Prediksi Harga Close: {prediksi_harga:.2f}")
     else:
         st.error("Harap pilih dan muat model terlebih dahulu.")
