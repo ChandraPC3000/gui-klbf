@@ -131,7 +131,7 @@ st.markdown("""
     <div class="boxed-text">
         <div class="contact-bar">
              <!-- Gmail with Link (Fixing the mailto error) -->
-            <a href="mailto:cputraciptaning@gmail.com" target="_blank">
+            <a href="mailto:cputraciptaning@gmail.com">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Gmail_icon_%282020%29.svg/1024px-Gmail_icon_%282020%29.svg.png" alt="Email"> Gmail
             </a>
             <!-- Instagram without Link -->
