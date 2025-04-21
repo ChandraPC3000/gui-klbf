@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 MODELS = ["Model XGBoost Default", "Model XGBoost GridSearchCV", "Model XGBoost PSO"]
 
 # Halaman Visualisasi Grafik Prediksi
-st.title("Visualisasi Grafik Prediksi Saham Kalbe Farma (KLBF)")
+st.title("Visualisasi Grafik Prediksi Harga Saham")
 st.write("Halaman ini menampilkan visualisasi grafik prediksi harga saham berdasarkan model yang dipilih.")
 
 # Dropdown untuk memilih model
