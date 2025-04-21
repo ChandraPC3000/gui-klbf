@@ -45,10 +45,10 @@ with col3:
     st.write(' ')
 
 # Title and information
-st.markdown('<h1 class="center">Prediksi Harga Penutupan Saham PT Kalbe Farma Tbk Menggunakan Model Extreme Gradient Boosting (XGBoost)</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="center">GUI-Python Untuk Memprediksi Harga Saham Menggunakan Model Extreme Gradient Boosting (XGBoost) Dengan Metode Optimasi PSO dan GridSearchCV</h1>', unsafe_allow_html=True)
 st.markdown('<p class="center space-below">Oleh:</p>', unsafe_allow_html=True)
 st.markdown('<p class="center space-below"><b>Chandra Putra Ciptaningtyas</b></p>', unsafe_allow_html=True)
-st.markdown('<p class="center space-below">NIM. 24050121140106</p>', unsafe_allow_html=True)
+st.markdown('<p class="center space-below">NIM. 24050121140106</p>', unsafe_allow_html=True)    
 
 # Additional space between NIM and dosen pembimbing
 st.markdown('<div class="space-between"></div>', unsafe_allow_html=True)
