@@ -7,7 +7,7 @@ from predict import load_model, predict
 MODELS = ["Model XGBoost Default", "Model XGBoost GridSearchCV", "Model XGBoost PSO"]
 
 # Halaman Prediksi
-st.title("Prediksi Saham Kalbe Farma (KLBF)")
+st.title("Prediksi Harga Penutupan Saham")
 st.write("Memprediksi **harga penutupan** dari saham berdasarkan harga **open**, **high**, dan **low**.")
 
 # Dropdown untuk memilih model
