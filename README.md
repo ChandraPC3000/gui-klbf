@@ -131,5 +131,5 @@ Proyek ini dilindungi oleh **Hak Cipta** dan tidak boleh disalin atau digunakan 
 ## Referensi
 - XGBoost: https://xgboost.readthedocs.io/
 - Streamlit: https://streamlit.io/
-- Particle Swarm Optimization: https://en.wikipedia.org/wiki/Particle_swarm_optimization
+- Particle Swarm Optimization: https://journal.uad.ac.id/index.php/JITEKI/article/view/27712
 - GridSearchCV: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
