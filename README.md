@@ -21,24 +21,29 @@ Aplikasi ini dibangun menggunakan **Streamlit** untuk antarmuka pengguna grafis 
 
 ## Instalasi
 
-### Prasyarat
-Pastikan Anda sudah menginstal Python versi 3.x. Untuk menjalankan aplikasi ini, Anda perlu menginstal beberapa pustaka yang diperlukan, yang dapat Anda instal melalui **pip**.
+### Clone dari GitHub atau Download ZIP
+Untuk mendapatkan proyek ini, Anda bisa meng-clone repositori ini menggunakan Git atau mengunduhnya sebagai file ZIP:
 
-### Langkah-langkah Instalasi
-
-1. **Clone Repository**  
-   Clone repositori ini ke komputer Anda:
+1. **Clone dengan Git**  
+   Buka **Git Bash** atau terminal di komputer Anda dan jalankan perintah berikut:
    ```bash
-   git clone https://github.com/username/repository-name.git
+   git clone https://github.com/ChandraPC3000/gui-klbf.git
    ```
 
-2. **Buat Virtual Environment (Opsional)**  
+2. **Atau Download ZIP**  
+   Jika Anda tidak menggunakan Git, Anda dapat mengunduh repositori ini dalam bentuk ZIP dengan mengklik tombol **Code** di GitHub dan memilih **Download ZIP**. Setelah itu, ekstrak file ZIP ke lokasi yang Anda inginkan.
+
+### Instalasi Dependencies
+
+Setelah mendapatkan proyek ini, pastikan Anda telah menginstal **Python** versi 3.x. Kemudian, instal semua dependencies yang diperlukan dengan langkah-langkah berikut:
+
+1. **Buat Virtual Environment (Opsional)**  
    Untuk menghindari konflik antara pustaka, disarankan untuk menggunakan virtual environment:
    ```bash
    python -m venv venv
    ```
 
-3. **Aktifkan Virtual Environment**
+2. **Aktifkan Virtual Environment**
    - Di Windows:
      ```bash
      venv\Scriptsctivate
@@ -48,19 +53,23 @@ Pastikan Anda sudah menginstal Python versi 3.x. Untuk menjalankan aplikasi ini,
      source venv/bin/activate
      ```
 
-4. **Instal Dependencies**  
+3. **Instal Dependencies**  
    Setelah environment aktif, instal pustaka yang diperlukan dengan menjalankan:
    ```bash
    pip install -r requirements.txt
    ```
+   Jika Anda belum memiliki file `requirements.txt`, Anda dapat menginstal pustaka yang diperlukan secara manual:
+   ```bash
+   pip install streamlit numpy==1.25.2
+   ```
 
-5. **Jalankan Aplikasi**  
+4. **Jalankan Aplikasi**  
    Setelah instalasi selesai, jalankan aplikasi Streamlit dengan perintah berikut:
    ```bash
    streamlit run app.py
    ```
 
-6. **Akses Aplikasi**  
+5. **Akses Aplikasi**  
    Aplikasi akan berjalan di browser di alamat `http://localhost:8501`.
 
 ## Penggunaan
@@ -76,6 +85,7 @@ Pengguna dapat memilih dua metode input data:
 - **Input Manual**: Masukkan harga saham Open, High, Low, dan Close secara langsung.
 - **Upload CSV**: Unggah file CSV yang berisi data historis harga saham. Pastikan file CSV memiliki kolom `Open`, `High`, `Low`, dan `Close`.
 
+
 ### Melihat Hasil Prediksi
 Setelah menginput data, klik tombol **Predict** untuk melihat hasil prediksi harga saham berdasarkan model yang dipilih. Hasil prediksi akan ditampilkan di layar dan dapat diekspor dalam bentuk tabel atau file CSV.
 
@@ -88,19 +98,25 @@ Pengguna juga dapat mengevaluasi kinerja model dengan menguji model menggunakan 
 ## Struktur Proyek
 
 ```
-/project-root
+/gui-klbf-main/
 │
-├── app.py                      # Aplikasi utama Streamlit
-├── predict.py                  # Fungsi untuk memuat dan menjalankan model
-├── requirements.txt            # Daftar pustaka yang dibutuhkan
-├── models/                     # Folder untuk menyimpan model XGBoost
-│   ├── xgboost_model_default_params.csv
-│   ├── xgboost_gridsearchcv_params.csv
-│   ├── xgboost_pso_params.csv
-├── data/                       # Folder untuk data training dan testing
-│   ├── train_data.csv
-│   ├── test_data.csv
-└── README.md                   # Dokumentasi proyek
+├── .devcontainer                  # Dev container settings
+├── .gitattributes                 # Git attributes
+├── .gitignore                     # Git ignore settings
+├── README.md                      # Dokumentasi proyek
+├── __init__.py                    # Inisialisasi modul
+├── app.py                          # Aplikasi utama Streamlit
+├── freeze                         # Proses untuk freeze dependencies
+├── gmail.png                      # Ikon untuk Gmail
+├── linkedin.png                   # Ikon untuk LinkedIn
+├── logo.png                       # Logo proyek
+├── models/                        # Folder untuk model XGBoost
+├── pages/                         # Folder untuk komponen halaman aplikasi
+├── predict.py                     # Fungsi untuk prediksi harga saham
+├── prediksi_harga_saham_klbf_xgboost_pso.csv  # Data prediksi harga saham
+├── requirements.txt               # Daftar pustaka yang dibutuhkan
+├── test.ipynb                     # Jupyter notebook untuk testing
+└── test_ok.ipynb                  # Jupyter notebook lain untuk testing
 ```
 
 ## Pengembang
